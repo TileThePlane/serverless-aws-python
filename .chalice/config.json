@@ -1,0 +1,14 @@
+{
+  "stages": {
+    "dev": {
+      "autogen_policy": false,
+      "api_gateway_stage": "api",
+      "environment_variables": {
+        "USERS_TABLE_NAME": "users-app-e8300297-85e9-4d85-948e-5072285f86e5"
+      }
+    }
+  },
+  "version": "2.0",
+  "app_name": "mealswiper",
+  "_secret": "\\xf7\\xb6k\\xabP\\xce\\xc1\\xaf\\xad\\x86\\xcf\\x84\\x02\\x80\\xa0\\xe0"
+}
