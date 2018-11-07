@@ -29,6 +29,7 @@ class TestDB(unittest.TestCase):
     def test_can_add_and_list_data(self):
         id = self.db.add_item('First item')
         items = self.db.list_items()
+        print(items)
         self.assertEqual(len(items), 1)
         self.assertEqual(items[0]['uid'], id)
 
@@ -83,8 +84,8 @@ class TestDB(unittest.TestCase):
         self.assertEqual(len(items), 2)
         users = [item['username'] for item in items]
         other_ids = [item['uid'] for item in items]
-        self.assertItemsEqual(['user', 'otheruser'], users)
-        self.assertItemsEqual([id, other_id],other_ids)
+        self.assertEqual(['user', 'otheruser'], users)
+        self.assertEqual([id, other_id], other_ids)
 
 
 @unittest.skipUnless(os.environ.get('RUN_INTEG_TESTS', False),
