@@ -19,7 +19,7 @@
 #
 
 import os
-
+import logging
 import boto3
 from chalice import Chalice, AuthResponse
 from chalicelib import auth, db
@@ -29,7 +29,8 @@ app = Chalice(app_name='swiperapp')
 app.debug = True
 _DB = None
 _USER_DB = None
-
+log = logging.getLogger('log-demo')
+log.setLevel(logging.DEBUG)
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -76,7 +77,11 @@ def get_authorized_username(current_request):
 
 @app.route('/swipemap', methods=['GET'])
 def get_meals():
-    return get_app_db().list_items(area=area)
+    log.debug(app.__dict__)
+    log.debug(app.current_request.__dict__)
+    log.debug(app.routes['/swipemap']['GET'].__dict__)
+    #username = get_authorized_username(app.current_request)
+    return get_app_db().list_items()
 
 
 @app.route('/myswipes', methods=['POST'], authorizer=jwt_auth)

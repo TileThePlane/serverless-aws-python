@@ -4,9 +4,13 @@ import datetime
 import os
 from uuid import uuid4
 from json import load
+import logging
 
 import jwt
 from chalice import UnauthorizedError
+
+log = logging.getLogger('log-demo')
+log.setLevel(logging.DEBUG)
 
 with open(os.path.join('.chalice', 'config.json')) as f:
     _SECRET = load(f)['_secret'].encode('ascii')
@@ -34,4 +38,6 @@ def get_jwt_token(username, password, record):
 
 
 def decode_jwt_token(token):
-    return jwt.decode(token, _SECRET, algorithms=['HS256'])
+    log.debug(token)
+    return jwt.decode(token, _SECRET, algorithms=['HS256'],options={'verify_iat': False,
+                                                                    'verify_nbf': False})

@@ -77,11 +77,16 @@ class DynamoDB(AppDB):
         response = self._table.scan()
         return response['Items']
 
-    def list_items(self, username=DEFAULT_USERNAME):
-        response = self._table.query(
-            KeyConditionExpression=Key('username').eq(username)
-        )
-        return response['Items']
+    def list_items(self):#username=DEFAULT_USERNAME):
+        response = self._table.scan()
+        data = response['Item']
+        #response = self._table.query(
+           # KeyConditionExpression=Key('username').eq(username)
+        #)
+        while 'LastEvalutedKey' in response:
+            response = self._table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
+            data.extend(response['Item'])
+        return data
 
     def add_item(self, description, metadata=None, username=DEFAULT_USERNAME):
         uid = str(uuid4())
