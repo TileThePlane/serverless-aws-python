@@ -20,11 +20,11 @@ def get_table_name(stage):
 def create_user(stage):
     table_name = get_table_name(stage)
     table = boto3.resource('dynamodb').Table(table_name)
-    username = input('Username: ').strip()
+    email = raw_input('Username: ').strip()
     password = getpass.getpass('Password: ').strip()
     password_fields = encode_password(password)
     item = {
-        'username': username,
+        'email': email,
         'hash': password_fields['hash'],
         'salt': Binary(password_fields['salt']),
         'rounds': password_fields['rounds'],
@@ -37,7 +37,7 @@ def encode_password(password, salt=None):
     if salt is None:
         salt = os.urandom(16)
     rounds = 100000
-    hashed = hashlib.pbkdf2_hmac('sha256', password.encode('ascii'), salt, rounds)
+    hashed = hashlib.pbkdf2_hmac('sha256', password, salt, rounds)
     return {
         'hash': 'sha256',
         'salt': salt,
@@ -50,15 +50,15 @@ def list_users(stage):
     table_name = get_table_name(stage)
     table = boto3.resource('dynamodb').Table(table_name)
     for item in table.scan()['Items']:
-        print(item['username'])
+        print(item['email'])
 
 
 def test_password(stage):
-    username = input('Username: ').strip()
+    email = raw_input('Username: ').strip()
     password = getpass.getpass('Password: ').strip()
     table_name = get_table_name(stage)
     table = boto3.resource('dynamodb').Table(table_name)
-    item = table.get_item(Key={'username': username})['Item']
+    item = table.get_item(Key={'email': email})['Item']
     encoded = encode_password(password, salt=item['salt'].value)
     if hmac.compare_digest(encoded['hashed'], item['hashed'].value):
         print("Password verified.")

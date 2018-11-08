@@ -32,13 +32,66 @@ _USER_DB = None
 log = logging.getLogger('log-demo')
 log.setLevel(logging.DEBUG)
 
+@app.route('/register', methods=['POST'])
+def create_user():
+    body = app.current_request.json_body
+    table = get_users_db()
+    warning_messages = []
+    try:
+        body['email']
+        if table.get_item(Key={'email': body['email']}):
+            warning_messages.append('Email already registered.'
+        if body['email'] > 250:
+            warning_messages.append('Email is too long.')
+        if '@' not in body['email']:
+            warning_messages.append('Email is not formated correctly.')
+        # Add check for valid .edu email
+        # And add college
+    except KeyError:
+        warning_messages.append('Email is required.')
+    
+    try:
+        body['password']
+        if len(body['password']) <= 10:
+            warning_messages.append('Password must be 10 or more characters.')
+        if len(body['password']) > 40:
+            warning_messages.append('Password is too long.')
+    except:
+        warning_messages.append('Password is required.')
+    
+    if warning_messages:
+        return {'warning_messages': warning_messages}
+    
+    try:
+        body['first_name']
+    except KeyError:
+        body.add({'first_name':''})
+    try:
+        body['last_name']
+    except KeyError:
+        body.add({'last_name':''})
+
+    password_fields = auth.encode_password(password)
+    item = {
+        'email': body['email'],
+        'first_name': body['first_name']
+        'last_name': body['last_name']
+        'college': 'default'
+        'hash': password_fields['hash'],
+        'salt': Binary(password_fields['salt']),
+        'rounds': password_fields['rounds'],
+        'hashed': Binary(password_fields['hashed']),
+    }
+    table.put_item(Item=item)
+    return item
+
 @app.route('/login', methods=['POST'])
 def login():
     body = app.current_request.json_body
     record = get_users_db().get_item(
-        Key={'username': body['username']})['Item']
+        Key={'email': body['email']})['Item']
     jwt_token = auth.get_jwt_token(
-        body['username'], body['password'], record)
+        body['email'], body['password'], record)
     
     return {'token': jwt_token.decode('utf-8')}
 
@@ -71,22 +124,22 @@ def get_app_db():
     return _DB
 
 
-def get_authorized_username(current_request):
+def get_authorized_email(current_request):
     return current_request.context['authorizer']['principalId']
 
 
 @app.route('/swipemap', methods=['GET'])
 def get_meals():
-    #username = get_authorized_username(app.current_request)
+    # email = get_authorized_email(app.current_request)
     return get_app_db().list_items()
 
 
 @app.route('/myswipes', methods=['POST'], authorizer=jwt_auth)
 def add_new_meal():
     body = app.current_request.json_body
-    username = get_authorized_username(app.current_request)
+    email = get_authorized_email(app.current_request)
     return get_app_db().add_item(
-        username=username,
+        email=email,
         description=body['description'],
         metadata=body.get('metadata'),
     )
@@ -94,23 +147,23 @@ def add_new_meal():
 
 @app.route('/myswipes/{uid}', methods=['GET'], authorizer=jwt_auth)
 def get_meal(uid):
-    username = get_authorized_username(app.current_request)
-    return get_app_db().get_item(uid, username=username)
+    email = get_authorized_email(app.current_request)
+    return get_app_db().get_item(uid, email=email)
 
 
 @app.route('/myswipes/{uid}', methods=['DELETE'], authorizer=jwt_auth)
 def delete_meal(uid):
-    username = get_authorized_username(app.current_request)
-    return get_app_db().delete_item(uid, username=username)
+    email = get_authorized_email(app.current_request)
+    return get_app_db().delete_item(uid, email=email)
 
 
 @app.route('/myswipes/{uid}', methods=['PUT'], authorizer=jwt_auth)
 def update_meal(uid):
     body = app.current_request.json_body
-    username = get_authorized_username(app.current_request)
+    email = get_authorized_email(app.current_request)
     get_app_db().update_item(
         uid,
         description=body.get('description'),
         state=body.get('state'),
         metadata=body.get('metadata'),
-        username=username)
+        email=email)

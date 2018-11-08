@@ -15,7 +15,7 @@ log.setLevel(logging.DEBUG)
 with open(os.path.join('.chalice', 'config.json')) as f:
     _SECRET = load(f)['_secret'].encode('ascii')
 
-def get_jwt_token(username, password, record):
+def get_jwt_token(email, password, record):
     actual = hashlib.pbkdf2_hmac(
         record['hash'],
         password.encode(),
@@ -27,7 +27,7 @@ def get_jwt_token(username, password, record):
         now = str(datetime.datetime.utcnow())
         unique_id = str(uuid4())
         payload = {
-            'sub': username,
+            'sub': email,
             'iat': now,
             'nbf': now,
             'jti': unique_id,

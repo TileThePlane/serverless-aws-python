@@ -15,7 +15,7 @@ class TestDB(unittest.TestCase):
     def tearDown(self):
         response = self.db.list_all_items()
         for item in response:
-            self.db.delete_item(item['uid'], username=item['username'])
+            self.db.delete_item(item['uid'], email=item['email'])
 
     def test_can_add_and_retrieve_data(self):
         id = self.db.add_item('First item')
@@ -44,45 +44,45 @@ class TestDB(unittest.TestCase):
         self.db.update_item(id, state='started')
         self.assertEqual(self.db.get_item(id)['state'], 'started')
 
-    def test_can_add_and_retrieve_data_with_specified_username(self):
-        username = 'myusername'
-        id = self.db.add_item('First item', username=username)
+    def test_can_add_and_retrieve_data_with_specified_email(self):
+        email = 'myemail'
+        id = self.db.add_item('First item', email=email)
         self.assertDictContainsSubset(
             {'description': 'First item',
              'state': 'unstarted',
              'metadata': {},
-             'username': username},
-            self.db.get_item(id, username=username)
+             'email': email},
+            self.db.get_item(id, email=email)
         )
 
-    def test_can_add_and_list_data_with_specified_username(self):
-        username = 'myusername'
-        id = self.db.add_item('First item', username=username)
-        items = self.db.list_items(username=username)
+    def test_can_add_and_list_data_with_specified_email(self):
+        email = 'myemail'
+        id = self.db.add_item('First item', email=email)
+        items = self.db.list_items(email=email)
         self.assertEqual(len(items), 1)
         self.assertEqual(items[0]['uid'], id)
-        self.assertEqual(items[0]['username'], username)
+        self.assertEqual(items[0]['email'], email)
 
-    def test_can_add_and_delete_data_with_specified_username(self):
-        username = 'myusername'
-        id = self.db.add_item('First item', username=username)
-        self.assertEqual(len(self.db.list_items(username=username)), 1)
-        self.db.delete_item(id, username=username)
-        self.assertEqual(len(self.db.list_items(username=username)), 0)
+    def test_can_add_and_delete_data_with_specified_email(self):
+        email = 'myemail'
+        id = self.db.add_item('First item', email=email)
+        self.assertEqual(len(self.db.list_items(email=email)), 1)
+        self.db.delete_item(id, email=email)
+        self.assertEqual(len(self.db.list_items(email=email)), 0)
 
-    def test_can_add_and_update_data_with_specified_username(self):
-        username = 'myusername'
-        id = self.db.add_item('First item', username=username)
-        self.db.update_item(id, state='started', username=username)
+    def test_can_add_and_update_data_with_specified_email(self):
+        email = 'myemail'
+        id = self.db.add_item('First item', email=email)
+        self.db.update_item(id, state='started', email=email)
         self.assertEqual(self.db.get_item(
-            id, username=username)['state'], 'started')
+            id, email=email)['state'], 'started')
 
     def test_list_all_items(self):
-        id = self.db.add_item('First item', username='user')
-        other_id = self.db.add_item('First item', username='otheruser')
+        id = self.db.add_item('First item', email='user')
+        other_id = self.db.add_item('First item', email='otheruser')
         items = self.db.list_all_items()
         self.assertEqual(len(items), 2)
-        users = [item['username'] for item in items]
+        users = [item['email'] for item in items]
         other_ids = [item['uid'] for item in items]
         self.assertEqual(['user', 'otheruser'], users)
         self.assertEqual([id, other_id], other_ids)
@@ -99,7 +99,7 @@ class TestDynamoDB(TestDB):
             TableName=cls.TABLE_NAME,
             KeySchema=[
                 {
-                    'AttributeName': 'username',
+                    'AttributeName': 'email',
                     'KeyType': 'HASH'
                 },
                 {
@@ -109,7 +109,7 @@ class TestDynamoDB(TestDB):
             ],
             AttributeDefinitions=[
                 {
-                    'AttributeName': 'username',
+                    'AttributeName': 'email',
                     'AttributeType': 'S',
                 },
                 {

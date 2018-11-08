@@ -10,13 +10,13 @@ TABLES = {
     'app': {
         'prefix': 'mealswiper-app',
         'env_var': 'APP_TABLE_NAME',
-        'hash_key': 'username',
+        'hash_key': 'email',
         'range_key': 'uid'
     },
     'users': {
         'prefix': 'users-app',
         'env_var': 'USERS_TABLE_NAME',
-        'hash_key': 'username',
+        'hash_key': 'email',
     }
 }
 

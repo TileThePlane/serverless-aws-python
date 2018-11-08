@@ -4,7 +4,7 @@ import logging
 from boto3.dynamodb.conditions import Key
 
 
-DEFAULT_USERNAME = 'default'
+DEFAULT_EMAIL = 'default'
 log = logging.getLogger('log-demo')
 log.setLevel(logging.DEBUG)
 
@@ -35,35 +35,35 @@ class InMemoryDB(AppDB):
 
     def list_all_items(self):
         all_items = []
-        for username in self._state:
-            all_items.extend(self.list_items(username))
+        for email in self._state:
+            all_items.extend(self.list_items(email))
         return all_items
 
-    def list_items(self, username=DEFAULT_USERNAME):
-        return list(self._state.get(username, {}).values())
+    def list_items(self, email=DEFAULT_EMAIL):
+        return list(self._state.get(email, {}).values())
 
-    def add_item(self, description, metadata=None, username=DEFAULT_USERNAME):
-        if username not in self._state:
-            self._state[username] = {}
+    def add_item(self, description, metadata=None, email=DEFAULT_EMAIL):
+        if email not in self._state:
+            self._state[email] = {}
         uid = str(uuid4())
-        self._state[username][uid] = {
+        self._state[email][uid] = {
             'uid': uid,
             'description': description,
             'state': 'unstarted',
             'metadata': metadata if metadata is not None else {},
-            'username': username
+            'email': email
         }
         return uid
 
-    def get_item(self, uid, username=DEFAULT_USERNAME):
-        return self._state[username][uid]
+    def get_item(self, uid, email=DEFAULT_EMAIL):
+        return self._state[email][uid]
 
-    def delete_item(self, uid, username=DEFAULT_USERNAME):
-        del self._state[username][uid]
+    def delete_item(self, uid, email=DEFAULT_EMAIL):
+        del self._state[email][uid]
 
     def update_item(self, uid, description=None, state=None,
-                    metadata=None, username=DEFAULT_USERNAME):
-        item = self._state[username][uid]
+                    metadata=None, email=DEFAULT_EMAIL):
+        item = self._state[email][uid]
         if description is not None:
             item['description'] = description
         if state is not None:
@@ -80,23 +80,23 @@ class DynamoDB(AppDB):
         response = self._table.scan()
         return response['Items']
 
-    def list_items(self):#username=DEFAULT_USERNAME):
+    def list_items(self):#email=DEFAULT_EMAIL):
         response = self._table.scan()
         #log.debug(response)
         data = response['Items']
         #response = self._table.query(
-           # KeyConditionExpression=Key('username').eq(username)
+           # KeyConditionExpression=Key('email').eq(email)
         #)
         while 'LastEvalutedKey' in response:
             response = self._table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
             data.extend(response['Items'])
         return data
 
-    def add_item(self, description, metadata=None, username=DEFAULT_USERNAME):
+    def add_item(self, description, metadata=None, email=DEFAULT_EMAIL):
         uid = str(uuid4())
         self._table.put_item(
             Item={
-                'username': username,
+                'email': email,
                 'uid': uid,
                 'description': description,
                 'state': 'unstarted',
@@ -105,10 +105,10 @@ class DynamoDB(AppDB):
         )
         return uid
 
-    def get_item(self, uid, username=DEFAULT_USERNAME):
+    def get_item(self, uid, email=DEFAULT_EMAIL):
         response = self._table.get_item(
             Key={
-                'username': username,
+                'email': email,
                 'uid': uid,
             },
         )
@@ -117,18 +117,18 @@ class DynamoDB(AppDB):
         except KeyError:
             return {'message':'Item does not exist'}
 
-    def delete_item(self, uid, username=DEFAULT_USERNAME):
+    def delete_item(self, uid, email=DEFAULT_EMAIL):
         self._table.delete_item(
             Key={
-                'username': username,
+                'email': email,
                 'uid': uid,
             }
         )
 
     def update_item(self, uid, description=None, state=None,
-                    metadata=None, username=DEFAULT_USERNAME):
+                    metadata=None, email=DEFAULT_EMAIL):
         # We could also use update_item() with an UpdateExpression.
-        item = self.get_item(uid, username)
+        item = self.get_item(uid, email)
         if description is not None:
             item['description'] = description
         if state is not None:
