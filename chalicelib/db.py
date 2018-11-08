@@ -1,9 +1,12 @@
 from uuid import uuid4
+import logging
 
 from boto3.dynamodb.conditions import Key
 
 
 DEFAULT_USERNAME = 'default'
+log = logging.getLogger('log-demo')
+log.setLevel(logging.DEBUG)
 
 
 class AppDB(object):
@@ -79,13 +82,14 @@ class DynamoDB(AppDB):
 
     def list_items(self):#username=DEFAULT_USERNAME):
         response = self._table.scan()
-        data = response['Item']
+        #log.debug(response)
+        data = response['Items']
         #response = self._table.query(
            # KeyConditionExpression=Key('username').eq(username)
         #)
         while 'LastEvalutedKey' in response:
             response = self._table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
-            data.extend(response['Item'])
+            data.extend(response['Items'])
         return data
 
     def add_item(self, description, metadata=None, username=DEFAULT_USERNAME):
@@ -108,7 +112,10 @@ class DynamoDB(AppDB):
                 'uid': uid,
             },
         )
-        return response['Item']
+        try:
+            return response['Item']
+        except KeyError:
+            return {'message':'Item does not exist'}
 
     def delete_item(self, uid, username=DEFAULT_USERNAME):
         self._table.delete_item(

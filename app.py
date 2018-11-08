@@ -77,9 +77,6 @@ def get_authorized_username(current_request):
 
 @app.route('/swipemap', methods=['GET'])
 def get_meals():
-    log.debug(app.__dict__)
-    log.debug(app.current_request.__dict__)
-    log.debug(app.routes['/swipemap']['GET'].__dict__)
     #username = get_authorized_username(app.current_request)
     return get_app_db().list_items()
 
