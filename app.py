@@ -21,9 +21,10 @@
 import os
 import logging
 import boto3
+import botocore
 from chalice import Chalice, AuthResponse
 from chalicelib import auth, db
-
+from boto3.dynamodb.types import Binary
 
 app = Chalice(app_name='swiperapp')
 app.debug = True
@@ -34,14 +35,11 @@ log.setLevel(logging.DEBUG)
 
 @app.route('/register', methods=['POST'])
 def create_user():
-    body = app.current_request.json_body
-    table = get_users_db()
+    body = app.current_request.json_body 
     warning_messages = []
     try:
-        body['email']
-        if table.get_item(Key={'email': body['email']}):
-            warning_messages.append('Email already registered.'
-        if body['email'] > 250:
+        body['email'] 
+        if len(body['email']) > 200:
             warning_messages.append('Email is too long.')
         if '@' not in body['email']:
             warning_messages.append('Email is not formated correctly.')
@@ -65,33 +63,43 @@ def create_user():
     try:
         body['first_name']
     except KeyError:
-        body.add({'first_name':''})
+        body['first_name'] = 'default'
     try:
         body['last_name']
     except KeyError:
-        body.add({'last_name':''})
+        body['last_name'] = 'default'
 
-    password_fields = auth.encode_password(password)
+    password_fields = auth.encode_password(body['password'])
     item = {
         'email': body['email'],
-        'first_name': body['first_name']
-        'last_name': body['last_name']
-        'college': 'default'
+        'first_name': body['first_name'],
+        'last_name': body['last_name'],
+        'college': 'default',
         'hash': password_fields['hash'],
         'salt': Binary(password_fields['salt']),
         'rounds': password_fields['rounds'],
-        'hashed': Binary(password_fields['hashed']),
+        'hashed': Binary(password_fields['hashed'])
     }
-    table.put_item(Item=item)
-    return item
+
+    try:
+        log.debug(get_users_db())
+        get_users_db().put_item(Item=item,
+                        ConditionExpression='attribute_not_exists(email)'
+                        )
+    except botocore.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
+            return {'warning_messages':'Email is already registered.'}
+    
+    return {'message':'success'} 
 
 @app.route('/login', methods=['POST'])
 def login():
     body = app.current_request.json_body
     record = get_users_db().get_item(
-        Key={'email': body['email']})['Item']
+        Key={'email': body['email']})
+    log.debug(record)
     jwt_token = auth.get_jwt_token(
-        body['email'], body['password'], record)
+        body['email'], body['password'], record['Item'])
     
     return {'token': jwt_token.decode('utf-8')}
 

@@ -20,9 +20,9 @@ def get_table_name(stage):
 def create_user(stage):
     table_name = get_table_name(stage)
     table = boto3.resource('dynamodb').Table(table_name)
-    email = raw_input('Username: ').strip()
+    email = input('Username: ').strip()
     password = getpass.getpass('Password: ').strip()
-    password_fields = encode_password(password)
+    password_fields = encode_password(str.encode(password))
     item = {
         'email': email,
         'hash': password_fields['hash'],
